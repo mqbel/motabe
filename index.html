@@ -1001,7 +1001,7 @@ function renderAdmin(){
     ['قياسات هذا الأسبوع',weekly,'#EA580C'],
     ['العلاجات النشطة',medCount,'#7C3AED']
   ];
-  $('#admin-stats').innerHTML=boxes.map(b=>`<div class="astat"><div class="n" style="color:${b[2]}" data-count="${b[1]}">0</div><div class="t">${b[0]}</div></div>`).join('');
+  $('#admin-stats').innerHTML=boxes.map(b=>`<div class="astat"><div class="n" style="color:${b[2]}" data-count="${b[1]}">0</div><div class="t">${b[0]}</div></div>`).join('');animateNumbersIn($('#admin-stats'));
   /* disease bars */
   const mx=Math.max(total,1);
   $('#admin-disease-bars').innerHTML=Object.keys(D).map(k=>`
@@ -1188,7 +1188,7 @@ function renderDocDash(){
   let total=0,weekly=0;const week=Date.now()-WEEK;
   list.forEach(u=>{for(const k in D){total+=u.data[k].length;weekly+=u.data[k].filter(r=>r.t>=week).length;}});
   $('#doc-stats').innerHTML=[['مرضاي',list.length,'#4F46E5'],['إجمالي القياسات',total,'#059669'],['قياسات هذا الأسبوع',weekly,'#EA580C']].map(b=>'<div class="astat"><div class="n" style="color:'+b[2]+'" data-count="'+b[1]+'">0</div><div class="t">'+b[0]+'</div></div>').join('');
-  renderDocPatients();observeReveals($('#scr-doc'));
+  animateNumbersIn($('#doc-stats'));renderDocPatients();observeReveals($('#scr-doc'));
 }
 function renderDocPatients(){
   const slug=docSession;if(!slug)return;
