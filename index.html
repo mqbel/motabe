@@ -1135,7 +1135,7 @@ function showPatientAppFromAdmin(){showPatientApp();}
 
 
 /* ================= MULTI-TENANT: DOCTORS / ROUTING / SUPER ================= */
-const PLATFORM_INTRO='منصّة متابِع الصحية — تابِع مؤشرات السكري والضغط والسمنة وعلاجاتك بسهولة، وشارك بياناتك مع طبيبك المتابِع.';
+const PLATFORM_INTRO='متابِع — مكان واحد منظّم يجمع ملفك الصحي، ليسهُل عليك وعلى طبيبك متابعته.';
 function setBrandName(name){document.querySelectorAll('.brand-name').forEach(el=>{el.innerHTML=name?('<span class="pre">المنصّة بإشراف</span>'+esc(name)):('<span class="intro">'+PLATFORM_INTRO+'</span>');});}
 function getPin(pfx){return [0,1,2,3].map(i=>{const el=$('#'+pfx+'-p'+i);return el?(el.value||'').replace(/\D/g,''):'';}).join('');}
 function wirePins(){document.querySelectorAll('.pin-row').forEach(row=>{const box=[...row.querySelectorAll('input')];box.forEach((inp,i)=>{if(inp._wired)return;inp._wired=1;inp.addEventListener('input',()=>{inp.value=inp.value.replace(/\D/g,'').slice(0,1);if(inp.value&&i<box.length-1)box[i+1].focus();});inp.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!inp.value&&i>0)box[i-1].focus();});});});}
