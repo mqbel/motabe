@@ -1314,7 +1314,7 @@ function ensureDocFab(){
 }
 function toggleDocFab(e){if(e)e.stopPropagation();document.getElementById('docfab').classList.toggle('open');}
 function docFabGo(t){const d=document.getElementById('docfab');d.classList.remove('open');if(t==='login')gotoHash(curDoctorSlug?('#/'+curDoctorSlug+'/doctor'):'#/doctor');else gotoHash('#/register-doctor');}
-function updateDocFab(screenId){ensureDocFab();const d=document.getElementById('docfab');d.style.display=(screenId==='scr-login')?'':'none';d.classList.remove('open');}
+function updateDocFab(screenId){ensureDocFab();const d=document.getElementById('docfab');d.style.display=(screenId==='scr-login')?'block':'none';d.classList.remove('open');}
 
 /* ================= BOOT ================= */
 (function(){
