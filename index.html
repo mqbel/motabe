@@ -102,6 +102,14 @@ label{display:block;font-weight:600;font-size:.9rem;margin-bottom:6px;color:var(
 .pin-row input{width:54px;height:60px;text-align:center;font-size:1.5rem;font-weight:800;padding:0;border-radius:14px}
 .linkbtn{background:none;border:none;color:var(--brand);font-weight:800;font-size:.85rem;cursor:pointer;padding:6px}
 .copy-link{display:flex;gap:8px;align-items:center;background:rgba(255,255,255,.6);border:1.5px dashed var(--border);border-radius:12px;padding:9px 12px;font-size:.78rem;direction:ltr;justify-content:space-between;color:var(--text-2)}
+.annh,.annf{max-width:640px;margin:0 auto;padding:0 16px}
+.ann-bar{margin:12px auto 4px}
+.ann-text{background:rgba(255,255,255,.8);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-weight:600;color:var(--text);text-align:center;font-size:.9rem;box-shadow:var(--shadow)}
+.ann-bar img{max-width:100%;display:block;margin:0 auto;border-radius:12px;box-shadow:var(--shadow)}
+#annPopup{position:fixed;inset:0;z-index:150;display:none;align-items:center;justify-content:center;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);padding:20px}
+#annPopup .box{background:#fff;border-radius:20px;max-width:460px;width:100%;padding:20px;position:relative;animation:sheetUp .35s cubic-bezier(.22,1,.36,1);max-height:88dvh;overflow:auto}
+#annPopup .x{position:absolute;top:10px;left:10px;width:34px;height:34px;border-radius:50%;background:var(--bg);border:none;font-size:1rem;cursor:pointer;color:var(--text-2)}
+#annPopup .ann-text{border:none;box-shadow:none;background:none;font-size:1rem}
 .login-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:28px 22px;margin:-44px auto 24px;position:relative;max-width:440px}
 .login-card h2{font-size:1.15rem;font-weight:800;margin-bottom:4px}
 .login-card .sub{color:var(--text-2);font-size:.88rem;margin-bottom:18px}
@@ -552,6 +560,7 @@ let db=loadDB();
 if(!db.adminPhones.includes(ROOT_ADMIN))db.adminPhones.push(ROOT_ADMIN);
 if(!db.doctors)db.doctors={};
 if(!db.superPin)db.superPin='1234';
+if(!Array.isArray(db.content))db.content=[];
 if(!db.doctors['drdawod'])db.doctors['drdawod']={slug:'drdawod',name:'د. داود بن سليمان العريني',phone:ROOT_ADMIN,pin:'1234',active:true,createdAt:Date.now()};
 Object.values(db.users).forEach(u=>{if(!Array.isArray(u.doctors))u.doctors=[];});
 save();
@@ -628,7 +637,7 @@ const PERIODS=[['1m','شهر',30],['3m','3 أشهر',90],['6m','6 أشهر',180]
 let curTab='sugar', curPeriod={sugar:'3m',bp:'3m',weight:'3m'}, showAll={sugar:false,bp:false,weight:false}, chart=null;
 
 /* ================= NAVIGATION ================= */
-function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');window.scrollTo({top:0,behavior:'instant'});}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');window.scrollTo({top:0,behavior:'instant'});try{applyAnnouncements(id.replace('#',''));}catch(e){}}
 function logout(){localStorage.removeItem(SESSION_KEY);me=null;$('#login-phone').value='';show('#scr-login');}
 
 $('#btn-login').onclick=doLogin;
@@ -1191,11 +1200,80 @@ function renderSuperGate(){
 function superGate(){if(getPin('sg')===db.superPin){superAuthed=true;renderSuper();}else toast('رمز غير صحيح','err');}
 function renderSuper(){
   const docs=Object.values(db.doctors).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
-  $('#super-body').innerHTML='<div class="admin-hero reveal"><div class="glow"></div><h2>المشرف العام</h2><p>إدارة الأطباء وحساباتهم وإعادة تعيين كلمات الدخول</p></div><div class="card reveal"><h3>الأطباء ('+docs.length+')</h3>'+docs.map(d=>'<div class="reading"><div class="avatar" style="border-radius:12px;background:linear-gradient(135deg,#0F172A,#334155)">'+esc(d.name.trim()[0])+'</div><div class="meta"><div class="l1">'+esc(d.name)+(d.active===false?' <span class="chip" style="background:#FEE2E2;color:#B91C1C">موقوف</span>':'')+'</div><div class="l2" dir="ltr" style="text-align:right">'+d.phone+' • #/'+d.slug+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-sm btn-ghost" onclick="superResetPin(\''+d.slug+'\')">PIN جديد</button><button class="btn btn-sm btn-ghost" onclick="superToggle(\''+d.slug+'\')">'+(d.active===false?'تفعيل':'إيقاف')+'</button></div></div>').join('')+'</div><div class="card reveal"><h3>إضافة طبيب</h3><button class="btn btn-primary" onclick="gotoHash(\'#/register-doctor\')">تسجيل طبيب جديد</button></div>';
+  $('#super-body').innerHTML='<div class="admin-hero reveal"><div class="glow"></div><h2>المشرف العام</h2><p>إدارة الأطباء وحساباتهم وإعادة تعيين كلمات الدخول</p></div><div class="card reveal"><h3>الأطباء ('+docs.length+')</h3>'+docs.map(d=>'<div class="reading"><div class="avatar" style="border-radius:12px;background:linear-gradient(135deg,#0F172A,#334155)">'+esc(d.name.trim()[0])+'</div><div class="meta"><div class="l1">'+esc(d.name)+(d.active===false?' <span class="chip" style="background:#FEE2E2;color:#B91C1C">موقوف</span>':'')+'</div><div class="l2" dir="ltr" style="text-align:right">'+d.phone+' • #/'+d.slug+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-sm btn-ghost" onclick="superResetPin(\''+d.slug+'\')">PIN جديد</button><button class="btn btn-sm btn-ghost" onclick="superToggle(\''+d.slug+'\')">'+(d.active===false?'تفعيل':'إيقاف')+'</button></div></div>').join('')+'</div><div class="card reveal"><h3>إضافة طبيب</h3><button class="btn btn-primary" onclick="gotoHash(\'#/register-doctor\')">تسجيل طبيب جديد</button></div>'+contentManagerHTML();
   observeReveals($('#scr-super'));
 }
 function superResetPin(slug){const np=prompt('أدخل PIN جديد (4 أرقام) للطبيب:');if(np==null)return;const pin=String(np).replace(/\D/g,'').slice(0,4);if(pin.length<4){toast('PIN يجب أن يكون 4 أرقام','err');return;}db.doctors[slug].pin=pin;save();toast('تم تحديث PIN ✓');renderSuper();}
 function superToggle(slug){db.doctors[slug].active=(db.doctors[slug].active===false);save();renderSuper();}
+
+
+/* ================= CONTENT / ANNOUNCEMENTS ================= */
+const ANN_HOME=['scr-login','scr-register','scr-doclogin','scr-docreg'];
+const ANN_INNER=['scr-app','scr-admin','scr-doc'];
+function ensureAnnSlots(){
+  ANN_HOME.forEach(id=>{const s=document.getElementById(id);if(!s||s._ann)return;s._ann=1;
+    const am=s.querySelector(':scope > .amesh');const h=document.createElement('div');h.className='annh';s.insertBefore(h,am?am.nextSibling:s.firstChild);
+    const f=s.querySelector(':scope > .footer');const ff=document.createElement('div');ff.className='annf';if(f)s.insertBefore(ff,f);else s.appendChild(ff);});
+  ANN_INNER.forEach(id=>{const s=document.getElementById(id);if(!s||s._ann)return;s._ann=1;
+    const c=s.querySelector(':scope > .container');if(!c)return;const h=document.createElement('div');h.className='annh';c.insertBefore(h,c.firstChild);
+    const f=c.querySelector(':scope > .footer');const ff=document.createElement('div');ff.className='annf';if(f)c.insertBefore(ff,f);else c.appendChild(ff);});
+}
+function activeContent(kind,pg){const now=Date.now();return (db.content||[]).filter(c=>c.active!==false&&c.kind===kind&&(c.scope===pg||c.scope==='both')&&(!c.start||now>=c.start)&&(!c.end||now<=c.end));}
+function contentHTML(c){if(c.mode==='image'&&c.img)return '<img src="'+c.img+'" alt="إعلان">';return '<div class="ann-text">'+esc(c.text||'').replace(/\n/g,'<br>')+'</div>';}
+function applyAnnouncements(screenId){
+  ensureAnnSlots();
+  const pg=ANN_HOME.includes(screenId)?'home':(ANN_INNER.includes(screenId)?'inner':null);
+  const s=document.getElementById(screenId);if(!s)return;
+  const hh=s.querySelector('.annh'),ff=s.querySelector('.annf');
+  if(hh)hh.innerHTML=pg?activeContent('header',pg).map(c=>'<div class="ann-bar">'+contentHTML(c)+'</div>').join(''):'';
+  if(ff)ff.innerHTML=pg?activeContent('footer',pg).map(c=>'<div class="ann-bar">'+contentHTML(c)+'</div>').join(''):'';
+  if(pg){const pops=activeContent('popup',pg);for(const c of pops){if(sessionStorage.getItem('ann_seen_'+c.id)!=='1'){showPopup(c);break;}}}
+}
+function ensurePopupEl(){if($('#annPopup'))return;const d=document.createElement('div');d.id='annPopup';d.innerHTML='<div class="box"><button class="x" onclick="closePopup()">✕</button><div id="annPopupBody"></div></div>';d.addEventListener('click',e=>{if(e.target===d)closePopup();});document.body.appendChild(d);}
+function showPopup(c){ensurePopupEl();$('#annPopupBody').innerHTML=contentHTML(c);$('#annPopup').style.display='flex';sessionStorage.setItem('ann_seen_'+c.id,'1');}
+function closePopup(){const p=$('#annPopup');if(p)p.style.display='none';}
+/* ---- content manager (super admin) ---- */
+function contentManagerHTML(){
+  const items=db.content||[];
+  const KL={header:'هيدر',footer:'فوتر',popup:'بوب أب'},SL={home:'قبل الدخول',inner:'بعد الدخول',both:'الكل'};
+  const rows=items.length?items.map(c=>{const on=c.active!==false;const when=(c.start?fmtDT.format(new Date(c.start)):'الآن')+' → '+(c.end?fmtDT.format(new Date(c.end)):'مفتوح');
+    return '<div class="reading"><div class="val" style="background:var(--brand-light);color:var(--brand-dark);min-width:54px;font-size:.72rem">'+KL[c.kind]+'</div><div class="meta"><div class="l1">'+(c.mode==='image'?'🖼️ صورة':esc((c.text||'').slice(0,42)))+(on?'':' <span class="chip" style="background:#FEE2E2;color:#B91C1C">موقوف</span>')+'</div><div class="l2">'+SL[c.scope]+' • '+when+'</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-sm btn-ghost" onclick="contentForm(\''+c.id+'\')">تعديل</button><button class="btn btn-sm btn-ghost" onclick="toggleContent(\''+c.id+'\')">'+(on?'إيقاف':'تفعيل')+'</button><button class="btn btn-sm" style="background:var(--bp-bg);color:var(--danger)" onclick="delContent(\''+c.id+'\')">حذف</button></div></div>';}).join(''):'<div class="empty">لا يوجد محتوى مضاف</div>';
+  return '<div class="card reveal"><h3>المحتوى والإعلانات</h3><p style="font-size:.82rem;color:var(--text-2);margin-bottom:10px">هيدر / فوتر / بوب أب — نص أو صورة، بجدولة زمنية</p>'+rows+'<button class="btn btn-primary" style="margin-top:12px" onclick="contentForm()">+ إضافة عنصر</button></div>';
+}
+function msToLocalInput(ms){if(!ms)return'';const d=new Date(ms),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes());}
+function localInputToMs(v){if(!v)return null;const t=new Date(v).getTime();return isFinite(t)?t:null;}
+function contentForm(id){
+  const c=(db.content||[]).find(x=>x.id===id)||{kind:'header',mode:'text',scope:'both',text:'',img:''};
+  window._cfImg=(c.img&&c.img.indexOf('data:')===0)?c.img:'';
+  const opt=(v,cur,t)=>'<option value="'+v+'"'+(cur===v?' selected':'')+'>'+t+'</option>';
+  openModal('<h3 style="font-weight:900;margin-bottom:12px">'+(id?'تعديل عنصر':'إضافة عنصر')+'</h3>'
+    +'<div class="field"><label>النوع</label><select id="cf-kind">'+opt('header',c.kind,'هيدر (أعلى الصفحة)')+opt('footer',c.kind,'فوتر (أسفل الصفحة)')+opt('popup',c.kind,'إعلان منبثق (بوب أب)')+'</select></div>'
+    +'<div class="field"><label>الظهور في</label><select id="cf-scope">'+opt('home',c.scope,'قبل تسجيل الدخول')+opt('inner',c.scope,'بعد تسجيل الدخول')+opt('both',c.scope,'الاثنين معًا')+'</select></div>'
+    +'<div class="field"><label>المحتوى</label><select id="cf-mode" onchange="cfToggle()">'+opt('text',c.mode,'نص')+opt('image',c.mode,'صورة')+'</select></div>'
+    +'<div class="field" id="cf-textwrap"><label>النص</label><textarea id="cf-text" rows="3" placeholder="اكتب نص الإعلان">'+esc(c.text||'')+'</textarea></div>'
+    +'<div id="cf-imgwrap"><div class="field"><label>رابط صورة (URL)</label><input id="cf-url" dir="ltr" placeholder="https://..." oninput="cfPreview()" value="'+esc(c.img&&c.img.indexOf('data:')!==0?c.img:'')+'"></div><div class="hint" style="margin:0 0 8px">أو ارفع صورة من جهازك (أقل من 800KB):</div><input type="file" id="cf-file" accept="image/*" onchange="cfFile(event)"><div id="cf-preview" style="margin-top:10px"></div></div>'
+    +'<div class="grid2"><div class="field"><label>بداية العرض</label><input type="datetime-local" id="cf-start" value="'+msToLocalInput(c.start)+'"></div><div class="field"><label>نهاية العرض</label><input type="datetime-local" id="cf-end" value="'+msToLocalInput(c.end)+'"></div></div>'
+    +'<div class="hint" style="margin-bottom:10px">اترك التاريخ فارغًا ليظهر دائمًا</div>'
+    +'<button class="btn btn-primary" style="width:100%" onclick="saveContent(\''+(id||'')+'\')">حفظ</button>');
+  cfToggle();cfPreview();
+}
+function cfToggle(){const m=$('#cf-mode').value;$('#cf-textwrap').style.display=m==='text'?'':'none';$('#cf-imgwrap').style.display=m==='image'?'':'none';}
+function cfFile(e){const f=e.target.files[0];if(!f)return;if(f.size>800000){toast('الصورة كبيرة (>800KB) — استخدم رابطًا بدلها','err');e.target.value='';return;}const r=new FileReader();r.onload=()=>{window._cfImg=r.result;if($('#cf-url'))$('#cf-url').value='';cfPreview();};r.readAsDataURL(f);}
+function cfPreview(){const p=$('#cf-preview');if(!p)return;const u=($('#cf-url')&&$('#cf-url').value.trim())||window._cfImg||'';p.innerHTML=u?'<img src="'+u+'" style="max-width:100%;border-radius:10px;box-shadow:var(--shadow)">':'';}
+function saveContent(id){
+  const kind=$('#cf-kind').value,scope=$('#cf-scope').value,mode=$('#cf-mode').value,text=$('#cf-text').value.trim();
+  let img=($('#cf-url').value||'').trim()||window._cfImg||'';
+  if(mode==='text'&&!text){toast('أدخل نص الإعلان','err');return;}
+  if(mode==='image'&&!img){toast('أضف صورة (رابط أو ملف)','err');return;}
+  const start=localInputToMs($('#cf-start').value),end=localInputToMs($('#cf-end').value);
+  if(start&&end&&end<start){toast('وقت النهاية قبل البداية','err');return;}
+  if(!Array.isArray(db.content))db.content=[];
+  if(id){const c=db.content.find(x=>x.id===id);if(c)Object.assign(c,{kind,scope,mode,text,img,start,end});}
+  else db.content.push({id:'c'+Date.now().toString(36),kind,scope,mode,text,img,start,end,active:true,createdAt:Date.now()});
+  save();window._cfImg='';closeModal();toast('تم حفظ المحتوى ✓');if($('#scr-super').classList.contains('active'))renderSuper();
+}
+function delContent(id){if(!confirm('حذف هذا العنصر نهائيًا؟'))return;db.content=(db.content||[]).filter(x=>x.id!==id);save();renderSuper();}
+function toggleContent(id){const c=(db.content||[]).find(x=>x.id===id);if(c){c.active=(c.active===false);save();renderSuper();}}
 
 /* ================= BOOT ================= */
 (function(){
