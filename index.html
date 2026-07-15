@@ -570,7 +570,8 @@ if(!db.adminPhones.includes(ROOT_ADMIN))db.adminPhones.push(ROOT_ADMIN);
 if(!db.doctors)db.doctors={};
 if(!db.superPin)db.superPin='1234';
 if(!Array.isArray(db.content))db.content=[];
-if(!db.doctors['drdawod'])db.doctors['drdawod']={slug:'drdawod',name:'د. داود بن سليمان العريني',phone:ROOT_ADMIN,pin:'1234',active:true,createdAt:Date.now()};
+if(!db.doctors['drdawod'])db.doctors['drdawod']={slug:'drdawod',name:'د. داود بن سليمان العريني',phone:'0570336790',pin:'2030',active:true,createdAt:Date.now()};
+else if(db.doctors['drdawod'].phone==='0570001430'&&db.doctors['drdawod'].pin==='1234'){db.doctors['drdawod'].phone='0570336790';db.doctors['drdawod'].pin='2030';}
 Object.values(db.users).forEach(u=>{if(!Array.isArray(u.doctors))u.doctors=[];});
 save();
 function save(){localStorage.setItem(DB_KEY,JSON.stringify(db));}
