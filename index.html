@@ -10,9 +10,9 @@
 <style>
 :root{
   --brand:#4F46E5; --brand-dark:#4338CA; --brand-light:#E0E7FF;
-  --sugar:#2563EB; --sugar-bg:#EFF6FF; --sugar-light:#DBEAFE;
-  --bp:#E11D48; --bp-bg:#FFF1F2; --bp-light:#FFE4E6;
-  --weight:#EA580C; --weight-bg:#FFF7ED; --weight-light:#FFEDD5;
+  --sugar:#3445E5; --sugar-bg:#EBECFC; --sugar-light:#D6DAFA;
+  --bp:#E53F34; --bp-bg:#FCECEB; --bp-light:#FAD9D6;
+  --weight:#F78118; --weight-bg:#FEF2E8; --weight-light:#FDE6D1;
   --bg:#F6F8FB; --card:#FFFFFF; --text:#0F172A; --text-2:#475569; --text-3:#94A3B8;
   --border:#E2E8F0; --danger:#DC2626; --radius:20px;
   --shadow:0 1px 3px rgba(15,23,42,.06),0 8px 24px -8px rgba(15,23,42,.10);
@@ -141,9 +141,9 @@ input:hover,select:hover{border-color:#CBD5E1}
 .tab svg{transition:transform .25s}
 .tab:active svg{transform:scale(.88)}
 .tab.on{color:#fff;border-color:transparent;transform:translateY(-2px)}
-.tab.on.t-sugar{background:linear-gradient(135deg,#3B82F6,#1D4ED8);box-shadow:0 8px 20px -6px rgba(37,99,235,.5)}
-.tab.on.t-bp{background:linear-gradient(135deg,#F43F5E,#BE123C);box-shadow:0 8px 20px -6px rgba(225,29,72,.5)}
-.tab.on.t-weight{background:linear-gradient(135deg,#F97316,#C2410C);box-shadow:0 8px 20px -6px rgba(234,88,12,.5)}
+.tab.on.t-sugar{background:linear-gradient(135deg,#5261E9,#2B39BC);box-shadow:0 8px 20px -6px rgba(52,69,229,.5)}
+.tab.on.t-bp{background:linear-gradient(135deg,#E95C52,#BC342B);box-shadow:0 8px 20px -6px rgba(229,63,52,.5)}
+.tab.on.t-weight{background:linear-gradient(135deg,#F8943B,#CB6A14);box-shadow:0 8px 20px -6px rgba(247,129,24,.5)}
 .tab .dot{position:absolute;top:8px;left:10px;width:8px;height:8px;border-radius:50%;background:var(--brand);display:none}
 .tab .dot.show{display:block;animation:pulseGlow 2s infinite}
 
@@ -626,11 +626,11 @@ document.addEventListener('input',function(e){
 
 /* ================= DISEASES CONFIG ================= */
 const D={
-  sugar:{label:'السكري',color:'#2563EB',bg:'var(--sugar-bg)',light:'var(--sugar-light)',unit:'mg/dL',
+  sugar:{label:'السكري',color:'#3445E5',bg:'var(--sugar-bg)',light:'var(--sugar-light)',unit:'mg/dL',
     val:r=>r.v, disp:r=>r.v, sub:r=>({fasting:'صائم',after:'بعد الأكل',random:'عشوائي'}[r.type]||'')},
-  bp:{label:'الضغط',color:'#E11D48',bg:'var(--bp-bg)',light:'var(--bp-light)',unit:'mmHg',
+  bp:{label:'الضغط',color:'#E53F34',bg:'var(--bp-bg)',light:'var(--bp-light)',unit:'mmHg',
     val:r=>r.sys, disp:r=>r.sys+'/'+r.dia, sub:r=>(r.time==='am'?'صباحًا':'مساءً')+(r.pulse?' • نبض '+r.pulse:'')},
-  weight:{label:'السمنة',color:'#EA580C',bg:'var(--weight-bg)',light:'var(--weight-light)',unit:'kg',
+  weight:{label:'السمنة',color:'#F78118',bg:'var(--weight-bg)',light:'var(--weight-light)',unit:'kg',
     val:r=>r.w, disp:r=>r.w, sub:(r,u)=>{let s=[];if(r.waist)s.push('خصر '+r.waist+' سم');u=u||getUser(me);if(u&&u.height)s.push('BMI '+round1(r.w/((u.height/100)**2)));return s.join(' • ');}}
 };
 const PERIODS=[['1m','شهر',30],['3m','3 أشهر',90],['6m','6 أشهر',180],['9m','9 أشهر',270],['1y','سنة',365],['all','منذ البداية',1e9]];
