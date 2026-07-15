@@ -112,6 +112,14 @@ label{display:block;font-weight:600;font-size:.9rem;margin-bottom:6px;color:var(
 #annPopup .ann-text{border:none;box-shadow:none;background:none;font-size:1rem}
 .viewbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:linear-gradient(135deg,#4F46E5,#7C3AED);color:#fff;border-radius:14px;padding:11px 14px;margin-bottom:14px;font-size:.85rem;font-weight:700;box-shadow:var(--shadow)}
 .viewbar .btn{background:rgba(255,255,255,.22);color:#fff;min-height:34px;padding:5px 12px;font-size:.78rem;border:none}
+.brand-name .intro{display:block;font-weight:600;font-size:.9rem;color:#475569;max-width:360px;margin:0 auto;line-height:1.7;letter-spacing:0}
+#docfab{position:fixed;top:16px;left:16px;z-index:120;display:none}
+#docfab-btn{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.78);backdrop-filter:blur(8px);border:1.5px solid var(--border);color:var(--brand);font-size:1.6rem;font-weight:700;line-height:1;box-shadow:var(--shadow);cursor:pointer;transition:transform .2s;display:flex;align-items:center;justify-content:center}
+#docfab-btn:active{transform:scale(.92)}
+#docfab-menu{position:absolute;top:52px;left:0;display:flex;flex-direction:column;gap:8px;opacity:0;transform:translateY(-6px);pointer-events:none;transition:.2s}
+#docfab.open #docfab-menu{opacity:1;transform:none;pointer-events:auto}
+#docfab-menu button{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-weight:700;font-size:.85rem;color:var(--text);white-space:nowrap;box-shadow:var(--shadow);cursor:pointer;text-align:right}
+#docfab-menu button:active{background:var(--bg)}
 .login-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:28px 22px;margin:-44px auto 24px;position:relative;max-width:440px}
 .login-card h2{font-size:1.15rem;font-weight:800;margin-bottom:4px}
 .login-card .sub{color:var(--text-2);font-size:.88rem;margin-bottom:18px}
@@ -243,7 +251,6 @@ table.mini td{padding:9px 4px;border-bottom:1px dashed var(--border)}
       دخول
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
     </button>
-    <div style="text-align:center;margin-top:14px;border-top:1px solid var(--border);padding-top:12px"><button class="linkbtn" onclick="gotoHash('#/'+(curDoctorSlug||'drdawod')+'/doctor')">دخول الطبيب</button> · <button class="linkbtn" onclick="gotoHash('#/register-doctor')">تسجيل طبيب</button></div>
   </div>
   <div class="footer">جميع الحقوق محفوظة لمنصّة <span class="foot-logo"><svg class="logo-u" viewBox="0 0 1167 586" role="img" aria-label="شعار المنصة"><use href="#logo-sym"/></svg></span></div>
 </div>
@@ -640,7 +647,7 @@ const PERIODS=[['1m','شهر',30],['3m','3 أشهر',90],['6m','6 أشهر',180]
 let curTab='sugar', curPeriod={sugar:'3m',bp:'3m',weight:'3m'}, showAll={sugar:false,bp:false,weight:false}, chart=null;
 
 /* ================= NAVIGATION ================= */
-function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');window.scrollTo({top:0,behavior:'instant'});try{applyAnnouncements(id.replace('#',''));}catch(e){}}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');window.scrollTo({top:0,behavior:'instant'});try{applyAnnouncements(id.replace('#',''));}catch(e){}try{updateDocFab(id.replace('#',''));}catch(e){}}
 function logout(){if(viewingPatient){exitPatientView();return;}localStorage.removeItem(SESSION_KEY);me=null;$('#login-phone').value='';show('#scr-login');}
 
 $('#btn-login').onclick=doLogin;
@@ -1128,19 +1135,20 @@ function showPatientAppFromAdmin(){showPatientApp();}
 
 
 /* ================= MULTI-TENANT: DOCTORS / ROUTING / SUPER ================= */
-function setBrandName(name){document.querySelectorAll('.brand-name').forEach(el=>{el.innerHTML=name?('<span class="pre">المنصّة بإشراف</span>'+esc(name)):'';});}
+const PLATFORM_INTRO='منصّة متابِع الصحية — تابِع مؤشرات السكري والضغط والسمنة وعلاجاتك بسهولة، وشارك بياناتك مع طبيبك المتابِع.';
+function setBrandName(name){document.querySelectorAll('.brand-name').forEach(el=>{el.innerHTML=name?('<span class="pre">المنصّة بإشراف</span>'+esc(name)):('<span class="intro">'+PLATFORM_INTRO+'</span>');});}
 function getPin(pfx){return [0,1,2,3].map(i=>{const el=$('#'+pfx+'-p'+i);return el?(el.value||'').replace(/\D/g,''):'';}).join('');}
 function wirePins(){document.querySelectorAll('.pin-row').forEach(row=>{const box=[...row.querySelectorAll('input')];box.forEach((inp,i)=>{if(inp._wired)return;inp._wired=1;inp.addEventListener('input',()=>{inp.value=inp.value.replace(/\D/g,'').slice(0,1);if(inp.value&&i<box.length-1)box[i+1].focus();});inp.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!inp.value&&i>0)box[i-1].focus();});});});}
 function gotoHash(h){if(location.hash!==h)location.hash=h;else applyRoute();}
 function parseHash(){return (location.hash||'').replace(/^#\/?/,'').replace(/\/+$/,'').split('/').filter(Boolean);}
 function applyRoute(){
   const parts=parseHash();
-  if(parts[0]==='mqbel'){curDoctorSlug=null;setBrandName('');showSuper();return;}
-  if(parts[0]==='register-doctor'){curDoctorSlug=null;setBrandName('');show('#scr-docreg');return;}
-  let slug=parts[0];
-  if(!slug||!db.doctors[slug])slug=db.doctors['drdawod']?'drdawod':null;
+  if(parts[0]==='mqbel'){curDoctorSlug=null;showSuper();return;}
+  if(parts[0]==='register-doctor'){curDoctorSlug=null;show('#scr-docreg');return;}
+  if(parts[0]==='doctor'){curDoctorSlug=null;setBrandName(null);if(docSession&&db.doctors[docSession])showDoctorDashboard();else show('#scr-doclogin');return;}
+  const slug=(parts[0]&&db.doctors[parts[0]])?parts[0]:null;
   curDoctorSlug=slug;
-  setBrandName(slug&&db.doctors[slug]?db.doctors[slug].name:'');
+  setBrandName(slug?db.doctors[slug].name:null);
   if(parts[1]==='doctor'){ if(docSession&&db.doctors[docSession])showDoctorDashboard(); else show('#scr-doclogin'); return; }
   const s=localStorage.getItem(SESSION_KEY);
   if(s&&getUser(s)){me=s;const u=getUser(s);if(u.name){if(isAdmin(me))showAdmin();else showPatientApp();}else{$('#reg-phone').value=s;show('#scr-register');}return;}
@@ -1294,6 +1302,19 @@ function toggleContent(id){const c=(db.content||[]).find(x=>x.id===id);if(c){c.a
 function showDoctorView(phone){const u=getUser(phone);if(!u)return;_prevMe=me;me=phone;viewingPatient=phone;viewReturn='doc';closeModal();showPatientApp();}
 function exitPatientView(){viewingPatient=null;me=_prevMe;_prevMe=null;const bar=document.getElementById('doc-viewbar');if(bar)bar.style.display='none';const bk=viewReturn;viewReturn=null;if(bk==='admin')showAdmin();else showDoctorDashboard();}
 function applyDoctorViewBar(){const c=document.querySelector('#scr-app > .container');if(!c)return;let bar=document.getElementById('doc-viewbar');if(viewingPatient){if(!bar){bar=document.createElement('div');bar.id='doc-viewbar';}c.insertBefore(bar,c.firstChild);const u=getUser(viewingPatient);bar.innerHTML='<div class="viewbar"><span>تتصفّح ملف <b>'+esc(u?u.name:'')+'</b> كطبيب</span><button class="btn btn-sm" onclick="exitPatientView()">◀ رجوع للوحة الطبيب</button></div>';bar.style.display='';}else if(bar){bar.style.display='none';}}
+
+
+/* ---- discreet doctor-access FAB (+) on the main login ---- */
+function ensureDocFab(){
+  if(document.getElementById('docfab'))return;
+  const d=document.createElement('div');d.id='docfab';
+  d.innerHTML='<div id="docfab-menu"><button onclick="docFabGo(\'login\')">دخول الطبيب</button><button onclick="docFabGo(\'reg\')">تسجيل طبيب</button></div><button id="docfab-btn" aria-label="خيارات الطبيب" title="خيارات الطبيب" onclick="toggleDocFab(event)">+</button>';
+  document.body.appendChild(d);
+  document.addEventListener('click',e=>{if(!d.contains(e.target))d.classList.remove('open');});
+}
+function toggleDocFab(e){if(e)e.stopPropagation();document.getElementById('docfab').classList.toggle('open');}
+function docFabGo(t){const d=document.getElementById('docfab');d.classList.remove('open');if(t==='login')gotoHash(curDoctorSlug?('#/'+curDoctorSlug+'/doctor'):'#/doctor');else gotoHash('#/register-doctor');}
+function updateDocFab(screenId){ensureDocFab();const d=document.getElementById('docfab');d.style.display=(screenId==='scr-login')?'':'none';d.classList.remove('open');}
 
 /* ================= BOOT ================= */
 (function(){
