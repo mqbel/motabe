@@ -110,6 +110,8 @@ label{display:block;font-weight:600;font-size:.9rem;margin-bottom:6px;color:var(
 #annPopup .box{background:#fff;border-radius:20px;max-width:460px;width:100%;padding:20px;position:relative;animation:sheetUp .35s cubic-bezier(.22,1,.36,1);max-height:88dvh;overflow:auto}
 #annPopup .x{position:absolute;top:10px;left:10px;width:34px;height:34px;border-radius:50%;background:var(--bg);border:none;font-size:1rem;cursor:pointer;color:var(--text-2)}
 #annPopup .ann-text{border:none;box-shadow:none;background:none;font-size:1rem}
+.viewbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:linear-gradient(135deg,#4F46E5,#7C3AED);color:#fff;border-radius:14px;padding:11px 14px;margin-bottom:14px;font-size:.85rem;font-weight:700;box-shadow:var(--shadow)}
+.viewbar .btn{background:rgba(255,255,255,.22);color:#fff;min-height:34px;padding:5px 12px;font-size:.78rem;border:none}
 .login-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:28px 22px;margin:-44px auto 24px;position:relative;max-width:440px}
 .login-card h2{font-size:1.15rem;font-weight:800;margin-bottom:4px}
 .login-card .sub{color:var(--text-2);font-size:.88rem;margin-bottom:18px}
@@ -579,6 +581,7 @@ function ensureUser(p){if(!db.users[p])db.users[p]=newUser(p);const u=db.users[p
 function isAdmin(p){return db.adminPhones.includes(p);}
 let me=null; // current phone
 let curDoctorSlug=null, docSession=null, superAuthed=false;
+let viewingPatient=null, viewReturn=null, _prevMe=null;
 const DOC_SESSION_KEY='motabe_doc_session';
 
 /* ================= HELPERS ================= */
@@ -638,7 +641,7 @@ let curTab='sugar', curPeriod={sugar:'3m',bp:'3m',weight:'3m'}, showAll={sugar:f
 
 /* ================= NAVIGATION ================= */
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');window.scrollTo({top:0,behavior:'instant'});try{applyAnnouncements(id.replace('#',''));}catch(e){}}
-function logout(){localStorage.removeItem(SESSION_KEY);me=null;$('#login-phone').value='';show('#scr-login');}
+function logout(){if(viewingPatient){exitPatientView();return;}localStorage.removeItem(SESSION_KEY);me=null;$('#login-phone').value='';show('#scr-login');}
 
 $('#btn-login').onclick=doLogin;
 $('#login-phone').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
@@ -675,7 +678,7 @@ function latestTab(u){
 }
 function showPatientApp(){
   const u=ensureUser(me);
-  if(curDoctorSlug&&db.doctors[curDoctorSlug]&&Array.isArray(u.doctors)&&!u.doctors.includes(curDoctorSlug)){u.doctors.push(curDoctorSlug);save();}
+  if(!viewingPatient&&curDoctorSlug&&db.doctors[curDoctorSlug]&&Array.isArray(u.doctors)&&!u.doctors.includes(curDoctorSlug)){u.doctors.push(curDoctorSlug);save();}
   $('#app-name').textContent=u.name;
   $('#app-phone').textContent=u.phone;
   $('#app-avatar').textContent=u.name.trim()[0]||'م';
@@ -684,6 +687,7 @@ function showPatientApp(){
   curTab=latestTab(u);
   show('#scr-app');
   renderTabs();renderTab();
+  applyDoctorViewBar();
 }
 function renderTabs(){
   const u=getUser(me);let best=null,bt=0;
@@ -1198,7 +1202,7 @@ function renderDocPatients(){
     let lastT=0,lastK=null;for(const k in D){const a=u.data[k];if(a.length&&a[a.length-1].t>lastT){lastT=a[a.length-1].t;lastK=k;}}
     const n=Object.keys(D).reduce((s,k)=>s+u.data[k].length,0);
     const shared=(u.doctors||[]).length>1;
-    return '<div class="reading" style="animation-delay:'+(i*40)+'ms"><div class="avatar" style="border-radius:12px">'+esc(u.name.trim()[0])+'</div><div class="meta"><div class="l1">'+esc(u.name)+(shared?' <span class="chip" style="background:#ECFEFF;color:#0E7490">مشترك</span>':'')+'</div><div class="l2" dir="ltr" style="text-align:right">'+u.phone+'</div><div class="l2">'+n+' قياس'+(lastK?' • آخر تحديث '+D[lastK].label+' '+fmtD.format(new Date(lastT)):'')+'</div></div><button class="btn btn-sm btn-ghost" onclick="openPatient(\''+u.phone+'\')">عرض</button></div>';
+    return '<div class="reading" style="animation-delay:'+(i*40)+'ms"><div class="avatar" style="border-radius:12px">'+esc(u.name.trim()[0])+'</div><div class="meta"><div class="l1">'+esc(u.name)+(shared?' <span class="chip" style="background:#ECFEFF;color:#0E7490">مشترك</span>':'')+'</div><div class="l2" dir="ltr" style="text-align:right">'+u.phone+'</div><div class="l2">'+n+' قياس'+(lastK?' • آخر تحديث '+D[lastK].label+' '+fmtD.format(new Date(lastT)):'')+'</div></div><button class="btn btn-sm btn-ghost" onclick="showDoctorView(\''+u.phone+'\')">عرض</button></div>';
   }).join('');
 }
 function copyDocLink(){const t=(location.origin+location.pathname+'#/'+(docSession||curDoctorSlug));if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(()=>toast('نُسخ الرابط ✓'),()=>toast(t));else toast(t);}
@@ -1284,6 +1288,12 @@ function saveContent(id){
 }
 function delContent(id){if(!confirm('حذف هذا العنصر نهائيًا؟'))return;db.content=(db.content||[]).filter(x=>x.id!==id);save();renderSuper();}
 function toggleContent(id){const c=(db.content||[]).find(x=>x.id===id);if(c){c.active=(c.active===false);save();renderSuper();}}
+
+
+/* ---- doctor: view full patient file (as the patient sees it) ---- */
+function showDoctorView(phone){const u=getUser(phone);if(!u)return;_prevMe=me;me=phone;viewingPatient=phone;viewReturn='doc';closeModal();showPatientApp();}
+function exitPatientView(){viewingPatient=null;me=_prevMe;_prevMe=null;const bar=document.getElementById('doc-viewbar');if(bar)bar.style.display='none';const bk=viewReturn;viewReturn=null;if(bk==='admin')showAdmin();else showDoctorDashboard();}
+function applyDoctorViewBar(){const c=document.querySelector('#scr-app > .container');if(!c)return;let bar=document.getElementById('doc-viewbar');if(viewingPatient){if(!bar){bar=document.createElement('div');bar.id='doc-viewbar';}c.insertBefore(bar,c.firstChild);const u=getUser(viewingPatient);bar.innerHTML='<div class="viewbar"><span>تتصفّح ملف <b>'+esc(u?u.name:'')+'</b> كطبيب</span><button class="btn btn-sm" onclick="exitPatientView()">◀ رجوع للوحة الطبيب</button></div>';bar.style.display='';}else if(bar){bar.style.display='none';}}
 
 /* ================= BOOT ================= */
 (function(){
